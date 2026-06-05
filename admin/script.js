@@ -1128,15 +1128,18 @@ function renderOrderModal(order) {
         ? ' (' + Object.entries(item.typeSelections).map(([k, v]) => k + ': ' + v).join(', ') + ')'
         : '';
       const itemId = item.itemId || item.id || '';
-      const itemName = escHtml(item.name || itemId);
-      return `<div style="padding:0.25rem 0"><a href="#" onclick="viewItem('${itemId}');return false" style="text-decoration:none;color:var(--accent,#007bff)">${itemName}</a>${types} x${qty} - $${(price * qty).toFixed(2)}</div>`;
+      const found = cachedItems.find(i => i.id === itemId);
+      const itemDisplay = escHtml(item.name || (found ? found.name : itemId));
+      return `<div style="padding:0.25rem 0"><a href="#" class="item-link" data-item-id="${escHtml(itemId)}">${itemDisplay}</a>${types} x${qty} - $${(price * qty).toFixed(2)}</div>`;
     }).join('');
   } else {
     const qty = d.quantity || 1;
     const price = parseFloat(fd.price) || 0;
     const total = price * qty;
     const itemId = order.item_id || order.id || '';
-    itemsHtml = `<div><a href="#" onclick="viewItem('${itemId}');return false" style="text-decoration:none;color:var(--accent,#007bff)">${escHtml(order.item_id)}</a> x${qty} - $${total.toFixed(2)}</div>`;
+    const found = cachedItems.find(i => i.id === itemId);
+    const itemDisplay = escHtml(found ? found.name : (itemId.length > 8 ? itemId.substring(0, 8) + '...' : itemId));
+    itemsHtml = `<div><a href="#" class="item-link" data-item-id="${escHtml(itemId)}">${itemDisplay}</a> x${qty} - $${total.toFixed(2)}</div>`;
   }
 
   let total = d.cartTotal || d.items?.reduce((s, i) => s + (parseFloat(i.price) || 0) * (i.quantity || 1), 0) || 0;
@@ -1161,13 +1164,13 @@ function renderOrderModal(order) {
     <div style="margin-bottom:1rem">
       <strong>الحالة:</strong>
       <div style="margin-top:0.25rem;display:flex;gap:0.25rem;flex-wrap:wrap">
-        ${statuses.map(s => `<button class="btn small${s === status ? ' active' : ''}" onclick="changeOrderStatus('${order.id}','${s}')">${STATUS_DISPLAY[s] || s}</button>`).join('')}
+        ${statuses.map(s => `<button class="btn small${s === status ? ' active' : ''}" data-action="change-status" data-order-id="${escHtml(order.id)}" data-status="${escHtml(s)}">${STATUS_DISPLAY[s] || s}</button>`).join('')}
       </div>
     </div>
     <div style="margin-bottom:1rem">
       <strong>ملاحظات:</strong>
       <textarea id="order-notes-input" rows="3" style="width:100%;margin-top:0.25rem;padding:0.4rem;border:1px solid #ccc;border-radius:4px;font-size:0.85rem">${escHtml(order.notes || '')}</textarea>
-      <button class="btn small" style="margin-top:0.25rem" onclick="saveOrderNotes('${order.id}')">حفظ الملاحظات</button>
+      <button class="btn small" style="margin-top:0.25rem" data-action="save-order-notes" data-order-id="${escHtml(order.id)}">حفظ الملاحظات</button>
     </div>
   `;
 }
@@ -1188,6 +1191,15 @@ async function saveOrderNotes(orderId) {
 
 document.getElementById('btn-order-modal-close').onclick = () => document.getElementById('order-modal').classList.add('hidden');
 document.getElementById('order-modal').querySelector('.modal-backdrop').onclick = () => document.getElementById('order-modal').classList.add('hidden');
+document.getElementById('order-modal-content').addEventListener('click', e => {
+  const link = e.target.closest('a.item-link');
+  if (link) { e.preventDefault(); viewItem(link.dataset.itemId); return; }
+  const btn = e.target.closest('button[data-action]');
+  if (btn) {
+    if (btn.dataset.action === 'change-status') changeOrderStatus(btn.dataset.orderId, btn.dataset.status);
+    if (btn.dataset.action === 'save-order-notes') saveOrderNotes(btn.dataset.orderId);
+  }
+});
 
 /* --- Dashboard --- */
 
