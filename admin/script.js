@@ -1269,7 +1269,7 @@ function renderAnalytics(data) {
 
   let topHtml = data.topProducts.map(([id, p]) =>
     `<div style="display:flex;justify-content:space-between;font-size:0.85rem;padding:0.2rem 0;border-bottom:1px solid #eee">
-      <span>${escHtml(p.name.substring(0, 40))}</span>
+      <span>${escHtml((cachedItems.find(i => i.id === id)?.name || p.name).substring(0, 40))}</span>
       <span>${p.qty} مباع - $${p.revenue.toFixed(2)}</span>
     </div>`
   ).join('');
