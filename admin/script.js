@@ -1203,14 +1203,12 @@ function renderDashboard() {
     if (itemData.items && Array.isArray(itemData.items)) return sum + itemData.items.reduce((s, i) => s + (parseFloat(i.price) || 0) * (i.quantity || 1), 0);
     return sum;
   }, 0);
-  const lowStockItems = cachedItems.filter(i => i.quantity && i.stock != null && i.stock <= 5);
 
   const container = document.getElementById('dashboard-cards');
   container.innerHTML = `
     <div class="dashboard-card"><div class="card-value">${totalProducts}</div><div class="card-label">المنتجات</div></div>
     <div class="dashboard-card"><div class="card-value">${totalOrders}</div><div class="card-label">الطلبات</div></div>
     <div class="dashboard-card"><div class="card-value">$${totalRevenue.toFixed(2)}</div><div class="card-label">الإيرادات</div></div>
-    <div class="dashboard-card ${lowStockItems.length > 0 ? 'card-warning' : ''}"><div class="card-value">${lowStockItems.length}</div><div class="card-label">مخزون منخفض</div></div>
   `;
 
   const recent = document.getElementById('dashboard-recent-list');
