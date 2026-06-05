@@ -1293,7 +1293,7 @@ function renderAnalytics(data) {
     <div class="dashboard-cards" style="margin-bottom:1rem">
       <div class="dashboard-card"><div class="card-value">${data.totalOrders}</div><div class="card-label">إجمالي الطلبات</div></div>
       <div class="dashboard-card"><div class="card-value">$${data.totalRevenue.toFixed(2)}</div><div class="card-label">إجمالي الإيرادات</div></div>
-      <div class="dashboard-card"><div class="card-value">${data.topProducts.length > 0 ? data.topProducts[0][1].name.substring(0, 20) : 'غير متوفر'}</div><div class="card-label">أفضل منتج</div></div>
+      <div class="dashboard-card"><div class="card-value">${data.topProducts.length > 0 ? (cachedItems.find(i => i.id === data.topProducts[0][0])?.name || data.topProducts[0][1].name || 'غير متوفر').substring(0, 20) : 'غير متوفر'}</div><div class="card-label">أفضل منتج</div></div>
     </div>
     <div class="dashboard-section">
       <h3>الإيرادات اليومية</h3>
