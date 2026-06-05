@@ -1,19 +1,14 @@
 const API = '/admin/api';
 let editingId = null;
-let galleryUrls = [];
 let pickerCallback = null;
 let pickerForMainImage = false;
 let pickerMultiSelect = false;
 let gridViewData = window.innerWidth < 768;
 let gridViewOrders = window.innerWidth < 768;
 let gridViewStorage = window.innerWidth < 768;
-let gridViewGallery = window.innerWidth < 768;
-let gridViewNews = window.innerWidth < 768;
 let cachedItems = [];
 let cachedOrders = [];
 let cachedStorage = [];
-let cachedGallery = [];
-let cachedNews = [];
 let storageCache = { ts: 0, data: null };
 const STORAGE_CACHE_TTL = 10000;
 let totalDataItems = 0;
@@ -21,8 +16,6 @@ let totalOrdersItems = 0;
 let currentDataPage = 1;
 let currentOrdersPage = 1;
 let currentStoragePage = 1;
-let currentGalleryPage = 1;
-let currentNewsPage = 1;
 let dataSortDir = 'desc';
 let dataSearchQuery = '';
 let cachedAllData = [];
@@ -116,10 +109,7 @@ function getFormProduct() {
     tags: document.getElementById('pf-tags').value.split(',').map(s => s.trim()).filter(Boolean),
     mainImage: document.getElementById('pf-mainImage').value.trim(),
     properties: getProperties(),
-    quantity: document.getElementById('pf-quantity').checked,
-    stock: document.getElementById('pf-quantity').checked ? parseInt(document.getElementById('pf-stock').value) || 0 : undefined,
     currency: document.getElementById('pf-currency').value.trim() || undefined,
-    typeGroups: getTypeGroups(),
   };
 }
 
@@ -134,11 +124,7 @@ function setFormProduct(product) {
   document.getElementById('pf-tags').value = Array.isArray(product.tags) ? product.tags.join(', ') : (product.tags || '');
   document.getElementById('pf-mainImage').value = product.mainImage || '';
   setProperties(Array.isArray(product.properties) ? product.properties : []);
-  document.getElementById('pf-quantity').checked = !!product.quantity;
-  document.getElementById('pf-stock').value = product.stock ?? '';
-  document.getElementById('pf-stock-row').style.display = product.quantity ? '' : 'none';
   document.getElementById('pf-currency').value = product.currency || '';
-  setTypeGroups(product.typeGroups || []);
 }
 
 function clearForm() {
@@ -152,11 +138,7 @@ function clearForm() {
   document.getElementById('pf-tags').value = '';
   document.getElementById('pf-mainImage').value = '';
   setProperties([]);
-  document.getElementById('pf-quantity').checked = false;
-  document.getElementById('pf-stock').value = '';
-  document.getElementById('pf-stock-row').style.display = 'none';
   document.getElementById('pf-currency').value = '';
-  clearTypeGroups();
 }
 
 /* --- Properties sub-form --- */
@@ -186,78 +168,6 @@ function addPropertyRow(prop, value) {
   `;
   row.querySelector('.btn-remove-prop').onclick = () => row.remove();
   container.appendChild(row);
-}
-
-function getTypeGroups() {
-  const container = document.getElementById('type-groups-container');
-  const groups = [];
-  container.querySelectorAll('.type-group').forEach(groupEl => {
-    const name = groupEl.querySelector('.tg-name').value.trim();
-    const options = [];
-    groupEl.querySelectorAll('.tg-option').forEach(optEl => {
-      const oname = optEl.querySelector('.tg-opt-name').value.trim();
-      const oinfo = optEl.querySelector('.tg-opt-info').value.trim();
-      const oprice = optEl.querySelector('.tg-opt-price').value.trim();
-      if (oname) options.push({ name: oname, info: oinfo, price: oprice ? parseFloat(oprice) : null });
-    });
-    if (name) groups.push({ name, options });
-  });
-  return groups;
-}
-
-function setTypeGroups(groups) {
-  const container = document.getElementById('type-groups-container');
-  container.innerHTML = '';
-  (groups || []).forEach(g => { addTypeGroup(g.name, g.options); });
-}
-
-function clearTypeGroups() {
-  document.getElementById('type-groups-container').innerHTML = '';
-}
-
-function updateDiscountLabel() {
-  const label = document.getElementById('pf-discount-label');
-  const input = document.getElementById('pf-discount');
-  input.step = '1';
-  input.min = '0';
-  input.max = '100';
-  input.placeholder = '0';
-  if (label) label.textContent = '(0% = السعر الكامل، 100% = مجاني)';
-}
-
-function addTypeGroup(name, options) {
-  const container = document.getElementById('type-groups-container');
-  const groupEl = document.createElement('div');
-  groupEl.className = 'type-group';
-  groupEl.style.cssText = 'border:1px solid #ddd;border-radius:4px;padding:0.5rem;margin-bottom:0.5rem;background:#fafafa';
-  groupEl.innerHTML = `
-    <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.25rem">
-      <input class="tg-name" type="text" placeholder="اسم المجموعة (مثال: اللون)" value="${escHtml(name || '')}" style="flex:1">
-      <button type="button" class="btn small danger tg-remove-group">حذف المجموعة</button>
-    </div>
-    <div class="tg-options" style="margin-left:0.5rem;display:flex;flex-direction:column;gap:0.25rem"></div>
-    <button type="button" class="btn small tg-add-option" style="margin-left:0.5rem;margin-top:0.25rem">+ إضافة خيار</button>
-  `;
-  container.appendChild(groupEl);
-  groupEl.querySelector('.tg-remove-group').onclick = () => { groupEl.remove(); updateDiscountLabel(); };
-  groupEl.querySelector('.tg-add-option').onclick = () => addTypeOption(groupEl.querySelector('.tg-options'), '', '', null);
-  const optsContainer = groupEl.querySelector('.tg-options');
-  (options || []).forEach(opt => addTypeOption(optsContainer, opt.name, opt.info, opt.price));
-  return groupEl;
-}
-
-function addTypeOption(container, name, info, price) {
-  const optEl = document.createElement('div');
-  optEl.className = 'tg-option';
-  optEl.style.cssText = 'display:flex;gap:0.25rem;align-items:center;margin-bottom:0.15rem';
-  optEl.innerHTML = `
-    <input class="tg-opt-name" type="text" placeholder="اسم الخيار" value="${escHtml(name || '')}" style="flex:2">
-    <input class="tg-opt-info" type="text" placeholder="الوصف" value="${escHtml(info || '')}" style="flex:3">
-    <input class="tg-opt-price" type="number" step="0.01" placeholder="تعديل السعر" value="${price != null ? price : ''}" style="flex:1">
-    <button type="button" class="btn small danger tg-remove-option">X</button>
-  `;
-  container.appendChild(optEl);
-  optEl.querySelector('.tg-remove-option').onclick = () => optEl.remove();
 }
 
 async function loadAllData() {
@@ -355,7 +265,7 @@ function renderDataView() {
   if (topTablePg) topTablePg.style.display = gridViewData ? 'none' : '';
   if (topGridPg) topGridPg.style.display = gridViewData ? '' : 'none';
 
-  const keys = ['product_id', 'name', 'price', 'category', 'stock'];
+  const keys = ['product_id', 'name', 'price', 'category'];
   const FIELD_LABELS = {
     product_id: 'رقم المنتج', name: 'الاسم', price: 'السعر', category: 'الفئة',
     description: 'الوصف', stock: 'المخزون', image_url: 'رابط الصورة',
@@ -417,7 +327,6 @@ async function saveItem(e) {
   const data = getFormProduct();
   if (!data.name) return showToast('اسم المنتج مطلوب', 'error');
   if (!data.product_id) data.product_id = cachedItems.reduce((max, item) => Math.max(max, item.product_id || 0), 0) + 1;
-  data.gallery = galleryUrls;
   const btn = document.getElementById('btn-save');
   btn.disabled = true;
   btn.textContent = 'جارٍ الحفظ...';
@@ -479,28 +388,13 @@ function viewItem(itemId) {
     const props = item.properties.filter(p => p.prop).map(p => `${escHtml(p.prop)}: ${escHtml(p.value)}`).join('<br>');
     if (props) addRow('الخصائص', props);
   }
-  if (item.quantity) addRow('الكمية', 'مفعل' + (item.stock != null ? ' (المخزون: ' + item.stock + ')' : ''));
   if (item.currency) addRow('العملة', item.currency);
-  if (item.stock != null) addRow('المخزون', item.stock);
-  if (Array.isArray(item.typeGroups) && item.typeGroups.length) {
-    const tgDisplay = item.typeGroups.map(g => `${escHtml(g.name)}: ${g.options.map(o => o.name + (o.info ? ' (' + o.info + ')' : '') + (o.price != null ? ' [$' + o.price + ']' : '')).join(', ')}`).join('<br>');
-    addRow('مجموعات الأنواع', tgDisplay);
-  }
-  if (Array.isArray(item.gallery) && item.gallery.length) {
-    addRow('المعرض', item.gallery.map(u => `<img src="${escHtml(u)}" style="max-height:60px;border-radius:3px;cursor:pointer;margin:2px" data-action="view-image" data-url="${escHtml(u)}">`).join(''));
-  }
   document.getElementById('item-view-content').innerHTML = '<table style="width:100%;border-collapse:collapse">' + rows.join('') + '</table>';
   document.getElementById('item-view-modal').classList.remove('hidden');
 }
 
 function closeModal() {
   document.getElementById('modal').classList.add('hidden');
-  resetGallery();
-}
-
-function resetGallery() {
-  galleryUrls = [];
-  hideGallery();
 }
 
 function editItem(id) {
@@ -509,14 +403,9 @@ function editItem(id) {
   document.getElementById('btn-save').textContent = 'تحديث';
   fetch(`${API}`).then(r => r.json()).then(items => {
     const item = items.find(i => i.id === id);
-    if (item) {
-      setFormProduct(item);
-      galleryUrls = Array.isArray(item.gallery) ? [...item.gallery] : [];
-      showGallery();
-    }
+    if (item) setFormProduct(item);
   });
   document.getElementById('modal').classList.remove('hidden');
-  setTimeout(updateDiscountLabel, 50);
 }
 
 function openNew() {
@@ -526,10 +415,7 @@ function openNew() {
   clearForm();
   const maxId = cachedItems.reduce((max, item) => Math.max(max, item.product_id || 0), 0);
   document.getElementById('pf-product_id').value = maxId + 1;
-  galleryUrls = [];
-  showGallery();
   document.getElementById('modal').classList.remove('hidden');
-  setTimeout(updateDiscountLabel, 50);
 }
 
 document.getElementById('btn-add').onclick = openNew;
@@ -539,7 +425,6 @@ document.getElementById('btn-cancel').onclick = closeModal;
 document.querySelector('#modal .modal-backdrop')?.addEventListener('click', closeModal);
 document.getElementById('item-form').onsubmit = saveItem;
 document.getElementById('btn-add-property').onclick = () => addPropertyRow('', '');
-document.getElementById('btn-add-type-group').onclick = () => { addTypeGroup('', []); updateDiscountLabel(); };
 document.getElementById('btn-pf-mainImage').onclick = () => {
   pickerForMainImage = true;
   openPicker();
@@ -717,8 +602,6 @@ document.addEventListener('click', e => {
   if (loadFn === 'data') loadItems(page);
   else if (loadFn === 'orders') loadOrders(page);
   else if (loadFn === 'storage') { currentStoragePage = page; renderStorageView(); }
-  else if (loadFn === 'gallery') { currentGalleryPage = page; renderGalleryView(); }
-  else if (loadFn === 'news') { currentNewsPage = page; renderNewsView(); }
 });
 
 document.getElementById('btn-refresh-orders').onclick = () => { loadOrders(); showToast('تم تحديث الطلبات', 'info'); };
@@ -902,9 +785,6 @@ document.getElementById('storage-file-input').onchange = async (e) => {
   loadStorage(true);
 };
 document.getElementById('btn-toggle-storage').onclick = () => { gridViewStorage = !gridViewStorage; document.getElementById('btn-toggle-storage').textContent = gridViewStorage ? 'عرض جدول' : 'عرض شبكي'; renderStorageView(); };
-document.getElementById('btn-toggle-gallery').onclick = () => { gridViewGallery = !gridViewGallery; document.getElementById('btn-toggle-gallery').textContent = gridViewGallery ? 'عرض جدول' : 'عرض شبكي'; renderGalleryView(); };
-document.getElementById('btn-toggle-news').onclick = () => { gridViewNews = !gridViewNews; document.getElementById('btn-toggle-news').textContent = gridViewNews ? 'عرض جدول' : 'عرض شبكي'; renderNewsView(); };
-
 /* --- Snapshot URLs --- */
 
 const SNAPSHOT_ENDPOINTS = {
@@ -912,9 +792,6 @@ const SNAPSHOT_ENDPOINTS = {
   analytics: null,
   data: '/snapshot-url',
   storage: '/snapshot-url',
-  gallery: '/snapshot-url/gallery',
-  news: '/snapshot-url/news',
-  about: '/snapshot-url/about',
   settings: null
 };
 
@@ -942,7 +819,7 @@ async function showSnapshotUrl(tabName) {
 
 function updateItemCount(name) {
   const el = document.getElementById('item-count');
-  const counts = { dashboard: '', analytics: '', data: (dataSearchQuery ? filterData(cachedAllData, dataSearchQuery).length : totalDataItems) + ' عناصر', orders: totalOrdersItems + ' طلبات', storage: cachedStorage.length + ' صور', gallery: cachedGallery.length + ' صور', news: cachedNews.length + ' مقالات', about: '', settings: '' };
+  const counts = { dashboard: '', analytics: '', data: (dataSearchQuery ? filterData(cachedAllData, dataSearchQuery).length : totalDataItems) + ' عناصر', orders: totalOrdersItems + ' طلبات', storage: cachedStorage.length + ' صور', settings: '' };
   el.textContent = counts[name] || '';
 }
 
@@ -952,7 +829,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.admin-side-menu .tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     const name = tab.dataset.tab;
-    ['dashboard','analytics','data','orders','storage','gallery','news','about','settings'].forEach(t => {
+    ['dashboard','analytics','data','orders','storage','settings'].forEach(t => {
       const el = document.getElementById('tab-' + t);
       if (el) el.classList.toggle('hidden', name !== t);
     });
@@ -963,9 +840,6 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (name === 'analytics') loadAnalytics();
     if (name === 'orders') loadOrders();
     if (name === 'storage') loadStorage();
-    if (name === 'gallery') loadGalleryAdmin();
-    if (name === 'news') loadNewsAdmin();
-    if (name === 'about') loadAboutAdmin();
     if (name === 'settings') loadSettingsAdmin();
   };
 });
@@ -1033,58 +907,6 @@ function renderCell(val) {
   return esc(s);
 }
 
-/* --- Gallery --- */
-
-function renderGallery() {
-  const container = document.getElementById('gallery-thumbs');
-  if (galleryUrls.length === 0) { container.innerHTML = ''; return; }
-  container.innerHTML = galleryUrls.map((url, i) =>
-    `<div class="gallery-thumb"><img src="${escHtml(url)}" alt="" data-action="view-image" data-url="${escHtml(url)}"><button type="button" class="btn-remove" data-index="${i}">&times;</button></div>`
-  ).join('');
-  container.querySelectorAll('.btn-remove').forEach(el => {
-    el.onclick = (e) => { e.stopPropagation(); galleryUrls.splice(parseInt(el.dataset.index), 1); renderGallery(); };
-  });
-  container.querySelectorAll('img').forEach(el => {
-    el.onclick = (e) => { e.stopPropagation(); openLightbox(el.dataset.url); };
-  });
-}
-
-function showGallery() {
-  document.getElementById('modal-gallery-section').classList.remove('hidden');
-  renderGallery();
-}
-
-function hideGallery() {
-  document.getElementById('modal-gallery-section').classList.add('hidden');
-}
-
-document.getElementById('btn-modal-gallery-add').onclick = () => {
-  pickerCallback = (url) => { galleryUrls.push(url); renderGallery(); };
-  pickerMultiSelect = true;
-  openPicker();
-};
-
-document.getElementById('gallery-file-input').onchange = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const compressed = await compressImage(file, 200 * 1024);
-  const fd = new FormData();
-  fd.append('image', compressed);
-  const res = await fetch(`${API}/upload-file`, { method: 'POST', body: fd });
-  if (!res.ok) { showToast('فشل رفع الصورة إلى المعرض', 'error'); return; }
-  const { url } = await res.json();
-  if (pickerMultiSelect) {
-    galleryUrls.push(url);
-    renderGallery();
-    showToast('تمت إضافة الصورة إلى المعرض', 'success');
-  } else if (pickerCallback) {
-    document.getElementById('picker-modal').classList.add('hidden');
-    pickerCallback(url);
-  } else {
-    showToast('تم رفع الصورة إلى التخزين', 'success');
-  }
-};
-
 /* --- Storage Picker --- */
 
 function openPicker() {
@@ -1104,23 +926,10 @@ function openPicker() {
     const isMainPicker = pickerForMainImage;
     pickerForMainImage = false;
     grid.innerHTML = unlinked.map(img => {
-      const selected = pickerMultiSelect && galleryUrls.includes(img.url);
-      return `<img src="${escHtml(img.url)}" data-url="${escHtml(img.url)}" title="${escHtml(img.name)}" class="${selected ? 'picker-selected' : ''}">`;
+      return `<img src="${escHtml(img.url)}" data-url="${escHtml(img.url)}" title="${escHtml(img.name)}">`;
     }).join('');
     grid.querySelectorAll('img').forEach(el => {
       el.onclick = () => {
-        if (pickerMultiSelect) {
-          const url = el.dataset.url;
-          const idx = galleryUrls.indexOf(url);
-          if (idx === -1) {
-            galleryUrls.push(url);
-          } else {
-            galleryUrls.splice(idx, 1);
-          }
-          renderGallery();
-          openPicker();
-          return;
-        }
         if (isMainPicker) {
           document.getElementById('pf-mainImage').value = el.dataset.url;
           document.getElementById('picker-modal').classList.add('hidden');
@@ -1150,11 +959,7 @@ document.getElementById('btn-picker-cancel').onclick = () => { document.getEleme
 document.getElementById('picker-modal').querySelector('.modal-backdrop').onclick = () => { document.getElementById('picker-modal').classList.add('hidden'); pickerCallback = null; pickerForMainImage = false; pickerMultiSelect = false; };
 document.getElementById('btn-picker-upload').onclick = () => {
   document.getElementById('picker-modal').classList.add('hidden');
-  if (pickerCallback) {
-    document.getElementById('gallery-file-input').click();
-  } else {
-    document.getElementById('storage-file-input').click();
-  }
+  document.getElementById('storage-file-input').click();
 };
 
 /* --- Event delegation --- */
@@ -1547,13 +1352,7 @@ document.getElementById('btn-export-json').onclick = () => exportJSON(cachedItem
 document.getElementById('btn-export-orders-csv').onclick = () => exportCSV(cachedOrders, 'orders.csv');
 document.getElementById('btn-export-orders-json').onclick = () => exportJSON(cachedOrders, 'orders.json');
 
-/* --- Quantity checkbox toggle stock field --- */
 
-document.getElementById('pf-quantity').onchange = function() {
-  const row = document.getElementById('pf-stock-row');
-  row.style.display = this.checked ? '' : 'none';
-  if (!this.checked) document.getElementById('pf-stock').value = '';
-};
 
 document.getElementById('storage-body').addEventListener('click', e => {
   const btn = e.target.closest('button[data-action]');
@@ -1562,293 +1361,6 @@ document.getElementById('storage-body').addEventListener('click', e => {
   if (btn.dataset.action === 'delete-image') deleteStorageImage(btn.dataset.name);
   if (btn.dataset.action === 'view-image') openLightbox(btn.dataset.url);
 });
-
-/* --- Gallery Admin --- */
-
-async function loadGalleryAdmin() {
-  const res = await fetch(`${API}/gallery`);
-  if (res.status === 401) { showLogin(); return; }
-  cachedGallery = await res.json();
-  currentGalleryPage = 1;
-  updateItemCount('gallery');
-  renderGalleryView();
-}
-
-function renderGalleryPagination() {
-  return renderPagination(currentGalleryPage, cachedGallery.length, PAGE_SIZE, 'gallery');
-}
-
-function renderGalleryView() {
-  const tableWrap = document.getElementById('view-gallery-table');
-  const grid = document.getElementById('view-gallery-grid');
-  tableWrap.classList.toggle('hidden', gridViewGallery);
-  grid.classList.toggle('hidden', !gridViewGallery);
-  const topGalleryPg = document.getElementById('view-gallery-pagination-top');
-  const topGalleryGridPg = document.getElementById('view-gallery-grid-pagination-top');
-  if (topGalleryPg) topGalleryPg.style.display = gridViewGallery ? 'none' : '';
-  if (topGalleryGridPg) topGalleryGridPg.style.display = gridViewGallery ? '' : 'none';
-
-  const items = cachedGallery;
-  const start = (currentGalleryPage - 1) * PAGE_SIZE;
-  const pageItems = items.slice(start, start + PAGE_SIZE);
-  const pgnHtml = renderGalleryPagination();
-
-  function setGalleryBoth(ids, h) {
-    ids.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = h; });
-  }
-
-  if (gridViewGallery) {
-    if (items.length === 0) { grid.innerHTML = ''; setGalleryBoth(['view-gallery-grid-pagination','view-gallery-grid-pagination-top'], ''); return; }
-    grid.innerHTML = pageItems.map(item =>
-      `<div class="card card-storage"><img class="card-thumb" src="${escHtml(item.url)}" data-action="view-image" data-url="${escHtml(item.url)}"><div class="card-key">الرابط</div><div class="card-val" style="font-size:0.75rem;word-break:break-all">${escHtml(item.url)}</div><div class="card-key">تاريخ الإضافة</div><div class="card-val" style="font-size:0.75rem">${item.created_at ? new Date(item.created_at).toLocaleString() : ''}</div><div class="card-actions"><button class="btn small danger" data-action="delete-gallery" data-id="${item.id}">حذف</button></div></div>`
-    ).join('');
-    setGalleryBoth(['view-gallery-grid-pagination','view-gallery-grid-pagination-top'], pgnHtml);
-    setGalleryBoth(['view-gallery-pagination','view-gallery-pagination-top'], '');
-    return;
-  }
-
-  const tbody = document.getElementById('gallery-body');
-  const empty = document.getElementById('gallery-empty');
-  if (items.length === 0) { tbody.innerHTML = ''; empty.style.display = ''; setGalleryBoth(['view-gallery-pagination','view-gallery-pagination-top'], ''); return; }
-  empty.style.display = 'none';
-  tbody.innerHTML = pageItems.map(item => `
-    <tr>
-      <td><img src="${escHtml(item.url)}" alt="" style="max-height:50px;border-radius:4px;cursor:pointer" data-action="view-image" data-url="${escHtml(item.url)}"></td>
-      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(item.url)}</td>
-      <td>${item.created_at ? new Date(item.created_at).toLocaleString() : ''}</td>
-      <td class="actions"><button class="btn small danger" data-action="delete-gallery" data-id="${item.id}">حذف</button></td>
-    </tr>
-  `).join('');
-  setGalleryBoth(['view-gallery-pagination','view-gallery-pagination-top'], pgnHtml);
-  setGalleryBoth(['view-gallery-grid-pagination','view-gallery-grid-pagination-top'], '');
-}
-
-document.getElementById('btn-gallery-add').onclick = () => {
-  pickerCallback = (url) => {
-    fetch(`${API}/gallery`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) })
-      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-      .then(() => { showToast('تمت إضافة الصورة إلى المعرض', 'success'); loadGalleryAdmin(); })
-      .catch(() => showToast('فشل إضافة الصورة', 'error'));
-  };
-  openPicker();
-};
-document.getElementById('btn-refresh-gallery').onclick = loadGalleryAdmin;
-document.getElementById('gallery-body').addEventListener('click', e => {
-  const btn = e.target.closest('button[data-action]');
-  if (!btn) return;
-  if (btn.dataset.action === 'delete-gallery') {
-    if (!confirm('إزالة هذه الصورة من المعرض؟')) return;
-    fetch(`${API}/gallery/${btn.dataset.id}`, { method: 'DELETE' })
-      .then(r => { if (!r.ok) throw new Error(); showToast('تمت إزالة الصورة', 'success'); loadGalleryAdmin(); })
-      .catch(() => showToast('فشل إزالة الصورة', 'error'));
-  }
-});
-document.getElementById('view-gallery-grid').addEventListener('click', e => {
-  const btn = e.target.closest('button[data-action]');
-  if (!btn) return;
-  if (btn.dataset.action === 'delete-gallery') {
-    if (!confirm('إزالة هذه الصورة من المعرض؟')) return;
-    fetch(`${API}/gallery/${btn.dataset.id}`, { method: 'DELETE' })
-      .then(r => { if (!r.ok) throw new Error(); showToast('تمت إزالة الصورة', 'success'); loadGalleryAdmin(); })
-      .catch(() => showToast('فشل إزالة الصورة', 'error'));
-  }
-});
-
-/* --- News Admin --- */
-
-let editingNewsId = null;
-
-async function loadNewsAdmin() {
-  const res = await fetch(`${API}/news`);
-  if (res.status === 401) { showLogin(); return; }
-  cachedNews = await res.json();
-  currentNewsPage = 1;
-  updateItemCount('news');
-  renderNewsView();
-}
-
-function renderNewsPagination() {
-  return renderPagination(currentNewsPage, cachedNews.length, PAGE_SIZE, 'news');
-}
-
-function renderNewsView() {
-  const tableWrap = document.getElementById('view-news-table');
-  const grid = document.getElementById('view-news-grid');
-  tableWrap.classList.toggle('hidden', gridViewNews);
-  grid.classList.toggle('hidden', !gridViewNews);
-  const topNewsPg = document.getElementById('view-news-pagination-top');
-  const topNewsGridPg = document.getElementById('view-news-grid-pagination-top');
-  if (topNewsPg) topNewsPg.style.display = gridViewNews ? 'none' : '';
-  if (topNewsGridPg) topNewsGridPg.style.display = gridViewNews ? '' : 'none';
-
-  const items = cachedNews;
-  const start = (currentNewsPage - 1) * PAGE_SIZE;
-  const pageItems = items.slice(start, start + PAGE_SIZE);
-  const pgnHtml = renderNewsPagination();
-
-  function setNewsBoth(ids, h) {
-    ids.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = h; });
-  }
-
-  if (gridViewNews) {
-    if (items.length === 0) { grid.innerHTML = ''; setNewsBoth(['view-news-grid-pagination','view-news-grid-pagination-top'], ''); return; }
-    grid.innerHTML = pageItems.map(item => {
-      const preview = item.content ? item.content.split(/\s+/).slice(0, 8).join(' ') + (item.content.split(/\s+/).length > 8 ? '…' : '') : '';
-      return `<div class="card"><div class="card-key">العنوان</div><div class="card-val" style="font-weight:600">${escHtml(item.title)}</div><div class="card-key">المحتوى</div><div class="card-val" style="font-size:0.8rem;color:#666">${escHtml(preview)}</div><div class="card-key">التاريخ</div><div class="card-val" style="font-size:0.75rem">${item.created_at ? new Date(item.created_at).toLocaleString() : ''}</div><div class="card-actions"><button class="btn small" data-action="edit-news" data-id="${item.id}">تعديل</button> <button class="btn small danger" data-action="delete-news" data-id="${item.id}">حذف</button></div></div>`;
-    }).join('');
-    setNewsBoth(['view-news-grid-pagination','view-news-grid-pagination-top'], pgnHtml);
-    setNewsBoth(['view-news-pagination','view-news-pagination-top'], '');
-    return;
-  }
-
-  const tbody = document.getElementById('news-body');
-  const empty = document.getElementById('news-empty');
-  if (items.length === 0) { tbody.innerHTML = ''; empty.style.display = ''; setNewsBoth(['view-news-pagination','view-news-pagination-top'], ''); return; }
-  empty.style.display = 'none';
-  tbody.innerHTML = pageItems.map(item => {
-    const preview = item.content ? item.content.split(/\s+/).slice(0, 5).join(' ') + (item.content.split(/\s+/).length > 5 ? '…' : '') : '';
-    return `
-    <tr>
-      <td>${escHtml(item.title)}</td>
-      <td style="max-width:200px;white-space:normal;word-break:break-word;font-size:0.8rem;color:#666">${escHtml(preview)}</td>
-      <td>${item.image_url ? `<img src="${escHtml(item.image_url)}" alt="" style="max-height:50px;border-radius:4px;cursor:pointer" data-action="view-image" data-url="${escHtml(item.image_url)}">` : ''}</td>
-      <td>${item.created_at ? new Date(item.created_at).toLocaleString() : ''}</td>
-      <td class="actions"><button class="btn small" data-action="edit-news" data-id="${item.id}">تعديل</button> <button class="btn small danger" data-action="delete-news" data-id="${item.id}">حذف</button></td>
-    </tr>`;
-  }).join('');
-  setNewsBoth(['view-news-pagination','view-news-pagination-top'], pgnHtml);
-  setNewsBoth(['view-news-grid-pagination','view-news-grid-pagination-top'], '');
-}
-
-function clearNewsForm() {
-  document.getElementById('nf-title').value = '';
-  document.getElementById('nf-image').value = '';
-  document.getElementById('nf-content').value = '';
-}
-
-function openNewsModal(item) {
-  editingNewsId = item ? item.id : null;
-  document.getElementById('news-modal-title').textContent = item ? 'تعديل المقال' : 'مقال جديد';
-  document.getElementById('btn-news-save').textContent = item ? 'تحديث' : 'حفظ';
-  clearNewsForm();
-  if (item) {
-    document.getElementById('nf-title').value = item.title || '';
-    document.getElementById('nf-image').value = item.image_url || '';
-    document.getElementById('nf-content').value = item.content || '';
-  }
-  document.getElementById('news-modal').classList.remove('hidden');
-}
-
-function closeNewsModal() { document.getElementById('news-modal').classList.add('hidden'); editingNewsId = null; }
-
-document.getElementById('btn-news-add').onclick = () => openNewsModal(null);
-document.getElementById('btn-refresh-news').onclick = loadNewsAdmin;
-document.getElementById('btn-news-cancel').onclick = closeNewsModal;
-document.getElementById('news-modal').querySelector('.modal-backdrop').onclick = closeNewsModal;
-document.getElementById('news-form').onsubmit = async (e) => {
-  e.preventDefault();
-  const data = {
-    title: document.getElementById('nf-title').value.trim(),
-    image_url: document.getElementById('nf-image').value.trim(),
-    content: document.getElementById('nf-content').value.trim()
-  };
-  if (!data.title || !data.content) return showToast('العنوان والمحتوى مطلوبان', 'error');
-  const url = editingNewsId ? `${API}/news/${editingNewsId}` : `${API}/news`;
-  const method = editingNewsId ? 'PUT' : 'POST';
-  try {
-    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    if (!res.ok) throw new Error();
-    showToast(editingNewsId ? 'تم تحديث المقال' : 'تم إنشاء المقال', 'success');
-    closeNewsModal();
-    loadNewsAdmin();
-  } catch { showToast('فشل حفظ المقال', 'error'); }
-};
-document.getElementById('btn-nf-image').onclick = () => {
-  pickerCallback = (url) => { document.getElementById('nf-image').value = url; };
-  openPicker();
-};
-document.getElementById('news-body').addEventListener('click', e => {
-  const btn = e.target.closest('button[data-action]');
-  if (!btn) return;
-  if (btn.dataset.action === 'edit-news') {
-    const row = btn.closest('tr');
-    const cells = row.querySelectorAll('td');
-    openNewsModal({ id: btn.dataset.id, title: cells[0].textContent, image_url: cells[1].querySelector('img')?.dataset.url || '', content: '' });
-    fetch(`${API}/news/${btn.dataset.id}`).then(r => r.json()).then(item => {
-      document.getElementById('nf-content').value = item.content || '';
-    }).catch(() => {});
-    return;
-  }
-  if (btn.dataset.action === 'delete-news') {
-    if (!confirm('حذف هذا المقال؟')) return;
-    fetch(`${API}/news/${btn.dataset.id}`, { method: 'DELETE' })
-      .then(r => { if (!r.ok) throw new Error(); showToast('تم حذف المقال', 'success'); loadNewsAdmin(); })
-      .catch(() => showToast('فشل حذف المقال', 'error'));
-  }
-});
-document.getElementById('view-news-grid').addEventListener('click', e => {
-  const btn = e.target.closest('button[data-action]');
-  if (!btn) return;
-  if (btn.dataset.action === 'edit-news') {
-    openNewsModal({ id: btn.dataset.id });
-    fetch(`${API}/news/${btn.dataset.id}`).then(r => r.json()).then(item => {
-      document.getElementById('nf-title').value = item.title || '';
-      document.getElementById('nf-image').value = item.image_url || '';
-      document.getElementById('nf-content').value = item.content || '';
-    }).catch(() => {});
-    return;
-  }
-  if (btn.dataset.action === 'delete-news') {
-    if (!confirm('حذف هذا المقال؟')) return;
-    fetch(`${API}/news/${btn.dataset.id}`, { method: 'DELETE' })
-      .then(r => { if (!r.ok) throw new Error(); showToast('تم حذف المقال', 'success'); loadNewsAdmin(); })
-      .catch(() => showToast('فشل حذف المقال', 'error'));
-  }
-});
-
-/* --- About Admin --- */
-
-async function loadAboutAdmin() {
-  try {
-    const res = await fetch(`${API}/about`);
-    const data = await res.json();
-    document.getElementById('about-logo').value = data.logo || '';
-    document.getElementById('about-title').value = data.title || '';
-    document.getElementById('about-subtitle').value = data.subtitle || '';
-    document.getElementById('about-description').value = data.description || '';
-    document.getElementById('about-address').value = data.address || '';
-    document.getElementById('about-phones').value = Array.isArray(data.phones) ? data.phones.join(', ') : (data.phones || '');
-    document.getElementById('about-instagram').value = (data.social && data.social.instagram) || '';
-    document.getElementById('about-facebook').value = (data.social && data.social.facebook) || '';
-    document.getElementById('about-whatsapp').value = (data.social && data.social.whatsapp) || '';
-  } catch { showToast('فشل تحميل بيانات صفحة حول', 'error'); }
-}
-
-document.getElementById('about-form').onsubmit = async (e) => {
-  e.preventDefault();
-  const data = {
-    logo: document.getElementById('about-logo').value.trim(),
-    title: document.getElementById('about-title').value.trim(),
-    subtitle: document.getElementById('about-subtitle').value.trim(),
-    description: document.getElementById('about-description').value.trim(),
-    address: document.getElementById('about-address').value.trim(),
-    phones: document.getElementById('about-phones').value.split(',').map(s => s.trim()).filter(Boolean),
-    social: {
-      instagram: document.getElementById('about-instagram').value.trim(),
-      facebook: document.getElementById('about-facebook').value.trim(),
-      whatsapp: document.getElementById('about-whatsapp').value.trim()
-    }
-  };
-  try {
-    const res = await fetch(`${API}/about`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-    if (!res.ok) { const err = await res.json().catch(() => ({})); showToast(err.error || 'فشل حفظ صفحة حول', 'error'); return; }
-    showToast('تم حفظ صفحة حول', 'success');
-  } catch (e) { showToast('فشل حفظ صفحة حول', 'error'); console.error(e); }
-};
-document.getElementById('btn-about-logo').onclick = () => {
-  pickerCallback = (url) => { document.getElementById('about-logo').value = url; };
-  openPicker();
-};
 
 /* --- Settings / Password --- */
 
@@ -2026,8 +1538,6 @@ function refreshSettings() {
 document.getElementById('btn-toggle-data').textContent = gridViewData ? 'عرض جدول' : 'عرض شبكي';
 document.getElementById('btn-toggle-orders').textContent = gridViewOrders ? 'عرض جدول' : 'عرض شبكي';
 document.getElementById('btn-toggle-storage').textContent = gridViewStorage ? 'عرض جدول' : 'عرض شبكي';
-document.getElementById('btn-toggle-gallery').textContent = gridViewGallery ? 'عرض جدول' : 'عرض شبكي';
-document.getElementById('btn-toggle-news').textContent = gridViewNews ? 'عرض جدول' : 'عرض شبكي';
 const sortBtn = document.getElementById('btn-sort-data');
 if (sortBtn) sortBtn.textContent = dataSortDir === 'desc' ? '↓ ترتيب' : '↑ ترتيب';
 

@@ -15,10 +15,7 @@
     <button class="tab" data-tab="data">البيانات</button>
     <button class="tab" data-tab="orders">الطلبات</button>
     <button class="tab" data-tab="storage">التخزين</button>
-    <button class="tab" data-tab="gallery">المعرض</button>
-    <button class="tab" data-tab="news">الأخبار</button>
     <button class="tab" data-tab="analytics">الإحصائيات</button>
-    <button class="tab" data-tab="about">حول</button>
     <button class="tab" data-tab="settings">الإعدادات</button>
   </nav>
   <span id="item-count"></span>
@@ -123,69 +120,6 @@
     </section>
   </section>
 
-  <section id="tab-gallery" class="hidden">
-    <section class="toolbar">
-      <button id="btn-gallery-add" class="btn primary">+ إضافة صورة</button>
-      <button id="btn-refresh-gallery" class="btn">تحديث</button>
-      <button id="btn-toggle-gallery" class="btn">عرض شبكي</button>
-      <span id="snapshot-url-gallery" style="font-size:0.8rem;color:#888;margin-left:1rem;word-break:break-all;display:none"></span>
-    </section>
-    <div id="view-gallery-pagination-top" style="margin-bottom:0.5rem"></div>
-    <div id="view-gallery-grid-pagination-top" style="margin-bottom:0.5rem;display:none"></div>
-    <section class="table-wrap" id="view-gallery-table">
-      <table id="gallery-table">
-        <thead><tr><th>الصورة</th><th>الرابط</th><th>تاريخ الإضافة</th><th class="actions">إجراءات</th></tr></thead>
-        <tbody id="gallery-body"></tbody>
-      </table>
-      <p id="gallery-empty" class="empty">لا توجد صور في المعرض بعد.</p>
-      <div id="view-gallery-pagination"></div>
-    </section>
-    <section id="view-gallery-grid" class="grid-view hidden">
-      <div id="view-gallery-grid-pagination" style="margin-top:0.5rem"></div>
-    </section>
-  </section>
-
-  <section id="tab-news" class="hidden">
-    <section class="toolbar">
-      <button id="btn-news-add" class="btn primary">+ مقال جديد</button>
-      <button id="btn-refresh-news" class="btn">تحديث</button>
-      <button id="btn-toggle-news" class="btn">عرض شبكي</button>
-      <span id="snapshot-url-news" style="font-size:0.8rem;color:#888;margin-left:1rem;word-break:break-all;display:none"></span>
-    </section>
-    <div id="view-news-pagination-top" style="margin-bottom:0.5rem"></div>
-    <div id="view-news-grid-pagination-top" style="margin-bottom:0.5rem;display:none"></div>
-    <section class="table-wrap" id="view-news-table">
-      <table id="news-table">
-        <thead><tr><th>العنوان</th><th>المحتوى</th><th>الصورة</th><th>التاريخ</th><th class="actions">إجراءات</th></tr></thead>
-        <tbody id="news-body"></tbody>
-      </table>
-      <p id="news-empty" class="empty">لا توجد مقالات بعد.</p>
-      <div id="view-news-pagination"></div>
-    </section>
-    <section id="view-news-grid" class="grid-view hidden">
-      <div id="view-news-grid-pagination" style="margin-top:0.5rem"></div>
-    </section>
-  </section>
-
-  <section id="tab-about" class="hidden">
-    <section class="toolbar">
-      <span id="snapshot-url-about" style="font-size:0.8rem;color:#888;word-break:break-all;display:none"></span>
-    </section>
-    <form id="about-form">
-      <div class="form-row"><label>رابط الشعار</label><input type="text" id="about-logo" placeholder="رابط صورة الشعار"><button type="button" id="btn-about-logo" class="btn small" style="white-space:nowrap">تصفح</button></div>
-      <div class="form-row"><label>العنوان</label><input type="text" id="about-title" placeholder="عنوان المتجر"></div>
-      <div class="form-row"><label>الوصف</label><input type="text" id="about-subtitle" placeholder="شعار"></div>
-      <div class="form-row"><label>الوصف</label><textarea id="about-description" rows="4" placeholder="عن المتجر..."></textarea></div>
-      <div class="form-row"><label>العنوان</label><input type="text" id="about-address" placeholder="عنوان المتجر"></div>
-      <div class="form-row"><label>أرقام الهاتف</label><input type="text" id="about-phones" placeholder="مفصول بفواصل: +123, +456"></div>
-      <div class="form-row"><label>رابط إنستغرام</label><input type="text" id="about-instagram" placeholder="https://instagram.com/..."></div>
-      <div class="form-row"><label>رابط فيسبوك</label><input type="text" id="about-facebook" placeholder="https://facebook.com/..."></div>
-      <div class="form-row"><label>رابط واتساب</label><input type="text" id="about-whatsapp" placeholder="https://wa.me/..."></div>
-      <div class="form-actions">
-        <button type="submit" id="btn-about-save" class="btn primary">حفظ</button>
-      </div>
-    </form>
-  </section>
 
   <section id="tab-settings" class="hidden">
     <section class="toolbar">
@@ -201,21 +135,6 @@
   <img id="lightbox-image" style="max-width:90vw;max-height:90vh;border-radius:4px;cursor:default">
 </div>
 
-<div id="news-modal" class="modal hidden">
-  <div class="modal-backdrop"></div>
-  <div class="modal-body">
-    <h2 id="news-modal-title">مقال جديد</h2>
-    <form id="news-form">
-      <div class="form-row"><label>العنوان</label><input type="text" id="nf-title" placeholder="عنوان المقال"></div>
-      <div class="form-row"><label>رابط الصورة</label><input type="text" id="nf-image" placeholder="رابط الصورة"><button type="button" id="btn-nf-image" class="btn small" style="white-space:nowrap">تصفح</button></div>
-      <div class="form-row"><label>المحتوى</label><textarea id="nf-content" rows="8" placeholder="محتوى المقال..."></textarea></div>
-      <div class="form-actions">
-        <button type="button" id="btn-news-cancel" class="btn">إلغاء</button>
-        <button type="submit" id="btn-news-save" class="btn primary">حفظ</button>
-      </div>
-    </form>
-  </div>
-</div>
 
 <div id="login-modal" class="modal">
   <div class="modal-backdrop blur"></div>
@@ -249,25 +168,12 @@
         <div class="form-row"><label>الفئة</label><input type="text" id="pf-category" placeholder="مثال: إلكترونيات"></div>
         <div class="form-row"><label>الوسوم</label><input type="text" id="pf-tags" placeholder="مفصول بفواصل، مثال: جديد، رائج"></div>
         <div class="form-row"><label>رابط الصورة الرئيسية</label><input type="text" id="pf-mainImage" placeholder="رابط الصورة"><button type="button" id="btn-pf-mainImage" class="btn small" style="white-space:nowrap">تصفح</button></div>
-        <div class="form-row"><label>تفعيل الكمية</label><input type="checkbox" id="pf-quantity" style="width:auto;margin-left:0.5rem"></div>
-        <div class="form-row" id="pf-stock-row" style="display:none"><label>عدد المخزون</label><input type="number" id="pf-stock" placeholder="0" min="0"></div>
         <div class="form-row"><label>العملة</label><input type="text" id="pf-currency" placeholder="$" style="max-width:60px"></div>
       </div>
       <div class="properties-section">
         <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.25rem">الخصائص</div>
         <div id="properties-container"></div>
         <button type="button" id="btn-add-property" class="btn small">+ إضافة خاصية</button>
-      </div>
-      <div class="type-groups-section" style="margin-top:0.75rem">
-        <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.25rem">مجموعات الأنواع</div>
-        <div id="type-groups-container"></div>
-        <button type="button" id="btn-add-type-group" class="btn small">+ إضافة مجموعة</button>
-      </div>
-      <div id="modal-gallery-section" class="gallery-section hidden">
-        <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.25rem">المعرض (صور الشرائح)</div>
-        <div id="gallery-thumbs"></div>
-        <button type="button" id="btn-modal-gallery-add" class="btn small" style="margin-top:0.25rem">+ إضافة صورة</button>
-        <input type="file" id="gallery-file-input" accept="image/*" style="display:none">
       </div>
       <div class="form-actions">
         <button type="button" id="btn-cancel" class="btn">إلغاء</button>
