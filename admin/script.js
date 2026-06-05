@@ -1127,13 +1127,16 @@ function renderOrderModal(order) {
       const types = item.typeSelections && Object.keys(item.typeSelections).length
         ? ' (' + Object.entries(item.typeSelections).map(([k, v]) => k + ': ' + v).join(', ') + ')'
         : '';
-      return `<div style="padding:0.25rem 0">${escHtml(item.name || item.itemId)}${types} x${qty} - $${(price * qty).toFixed(2)}</div>`;
+      const itemId = item.itemId || item.id || '';
+      const itemName = escHtml(item.name || itemId);
+      return `<div style="padding:0.25rem 0"><a href="#" onclick="viewItem('${itemId}');return false" style="text-decoration:none;color:var(--accent,#007bff)">${itemName}</a>${types} x${qty} - $${(price * qty).toFixed(2)}</div>`;
     }).join('');
   } else {
     const qty = d.quantity || 1;
     const price = parseFloat(fd.price) || 0;
     const total = price * qty;
-    itemsHtml = `<div>معرف العنصر: ${escHtml(order.item_id)} x${qty} - $${total.toFixed(2)}</div>`;
+    const itemId = order.item_id || order.id || '';
+    itemsHtml = `<div><a href="#" onclick="viewItem('${itemId}');return false" style="text-decoration:none;color:var(--accent,#007bff)">${escHtml(order.item_id)}</a> x${qty} - $${total.toFixed(2)}</div>`;
   }
 
   let total = d.cartTotal || d.items?.reduce((s, i) => s + (parseFloat(i.price) || 0) * (i.quantity || 1), 0) || 0;
