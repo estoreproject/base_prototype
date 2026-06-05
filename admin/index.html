@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم المتجر</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <button id="menu-toggle" class="btn">☰</button>
+  <h1>لوحة تحكم المتجر</h1>
+  <nav class="tabs">
+    <button class="tab active" data-tab="dashboard">لوحة التحكم</button>
+    <button class="tab" data-tab="data">البيانات</button>
+    <button class="tab" data-tab="orders">الطلبات</button>
+    <button class="tab" data-tab="storage">التخزين</button>
+    <button class="tab" data-tab="gallery">المعرض</button>
+    <button class="tab" data-tab="news">الأخبار</button>
+    <button class="tab" data-tab="analytics">الإحصائيات</button>
+    <button class="tab" data-tab="about">حول</button>
+    <button class="tab" data-tab="settings">الإعدادات</button>
+  </nav>
+  <span id="item-count"></span>
+  <div id="status-indicators">
+    <span class="status-dot" data-label="الخادم" id="dot-server"></span>
+    <span class="status-dot" data-label="قاعدة البيانات" id="dot-db"></span>
+    <span class="status-dot" data-label="التخزين" id="dot-storage"></span>
+    <span class="status-dot" data-label="الذاكرة المؤقتة" id="dot-cache"></span>
+  </div>
+</header>
+<div id="toast"></div>
+
+<main>
+  <section id="tab-dashboard">
+    <section class="toolbar">
+      <button id="btn-refresh-dashboard" class="btn">تحديث</button>
+      <button id="btn-regenerate-snapshots" class="btn primary" style="margin-left:0.5rem">إعادة إنشاء اللقطات</button>
+    </section>
+    <div id="dashboard-cards" class="dashboard-cards"></div>
+    <div id="dashboard-recent" class="dashboard-section">
+      <h3>آخر الطلبات</h3>
+      <div id="dashboard-recent-list"></div>
+    </div>
+  </section>
+
+  <section id="tab-analytics" class="hidden">
+    <section class="toolbar">
+      <button id="btn-refresh-analytics" class="btn">تحديث</button>
+    </section>
+    <div id="analytics-content"></div>
+  </section>
+
+  <section id="tab-data" class="hidden">
+    <section class="toolbar">
+      <button id="btn-add" class="btn primary">+ عنصر جديد</button>
+      <button id="btn-refresh-data" class="btn">تحديث</button>
+      <button id="btn-toggle-data" class="btn">عرض شبكي</button>
+      <button id="btn-sort-data" class="btn">↓ ترتيب</button>
+      <input type="text" id="data-search" placeholder="ابحث عن منتجات..." style="padding:0.4rem 0.5rem;border:1px solid #ccc;border-radius:4px;font-size:0.85rem;max-width:160px;margin-left:0.5rem">
+      <button id="btn-export-csv" class="btn" style="margin-left:0.5rem">تصدير CSV</button>
+      <button id="btn-export-json" class="btn">تصدير JSON</button>
+      <span id="snapshot-url-data" style="font-size:0.8rem;color:#888;margin-left:1rem;word-break:break-all;display:none"></span>
+    </section>
+    <div id="view-data-pagination-top" style="margin-bottom:0.5rem"></div>
+    <div id="view-data-grid-pagination-top" style="margin-bottom:0.5rem;display:none"></div>
+    <section class="table-wrap" id="view-data-table">
+      <table id="items-table">
+        <thead><tr id="table-head"></tr></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <p id="empty-msg" class="empty">لا توجد عناصر بعد. انقر '+ عنصر جديد' لإنشاء واحد.</p>
+      <div id="view-data-pagination"></div>
+    </section>
+    <section id="view-data-grid" class="grid-view hidden">
+      <div id="view-data-grid-pagination" style="margin-top:0.5rem"></div>
+    </section>
+  </section>
+
+  <section id="tab-orders" class="hidden">
+    <section class="toolbar">
+      <button id="btn-refresh-orders" class="btn">تحديث</button>
+      <button id="btn-toggle-orders" class="btn">عرض شبكي</button>
+      <input type="text" id="order-search" placeholder="ابحث عن عميل..." style="margin-left:0.5rem;padding:0.4rem 0.5rem;border:1px solid #ccc;border-radius:4px;font-size:0.85rem;max-width:180px">
+      <button id="btn-export-orders-csv" class="btn" style="margin-left:0.5rem">تصدير CSV</button>
+      <button id="btn-export-orders-json" class="btn">تصدير JSON</button>
+    </section>
+    <div id="view-orders-pagination-top" style="margin-bottom:0.5rem"></div>
+    <div id="view-orders-grid-pagination-top" style="margin-bottom:0.5rem;display:none"></div>
+    <section class="table-wrap" id="view-orders-table">
+      <table id="orders-table">
+        <thead><tr><th>العميل</th><th>المجموع</th><th>الحالة</th><th>التوصيل</th><th>التاريخ</th><th class="actions">إجراءات</th></tr></thead>
+        <tbody id="orders-body"></tbody>
+      </table>
+      <p id="orders-empty" class="empty">لا توجد طلبات بعد.</p>
+      <div id="view-orders-pagination"></div>
+    </section>
+    <section id="view-orders-grid" class="grid-view hidden">
+      <div id="view-orders-grid-pagination" style="margin-top:0.5rem"></div>
+    </section>
+  </section>
+
+  <section id="tab-storage" class="hidden">
+    <section class="toolbar">
+      <button id="btn-refresh-storage" class="btn">تحديث</button>
+      <button id="btn-upload-storage" class="btn primary">رفع</button>
+      <button id="btn-toggle-storage" class="btn">عرض شبكي</button>
+      <span id="snapshot-url-storage" style="font-size:0.8rem;color:#888;margin-left:1rem;word-break:break-all;display:none"></span>
+      <input type="file" id="storage-file-input" accept="image/*" multiple style="display:none">
+    </section>
+    <div id="view-storage-pagination-top" style="margin-bottom:0.5rem"></div>
+    <div id="view-storage-grid-pagination-top" style="margin-bottom:0.5rem;display:none"></div>
+    <section class="table-wrap" id="view-storage-table">
+      <table id="storage-table">
+        <thead><tr><th>الملف</th><th>الحجم</th><th>مرتبط</th><th>تاريخ الرفع</th><th class="actions">إجراءات</th></tr></thead>
+        <tbody id="storage-body"></tbody>
+      </table>
+      <p id="storage-empty" class="empty">لم يتم رفع صور بعد.</p>
+      <div id="view-storage-pagination"></div>
+    </section>
+    <section id="view-storage-grid" class="grid-view hidden">
+      <div id="view-storage-grid-pagination" style="margin-top:0.5rem"></div>
+    </section>
+  </section>
+
+  <section id="tab-gallery" class="hidden">
+    <section class="toolbar">
+      <button id="btn-gallery-add" class="btn primary">+ إضافة صورة</button>
+      <button id="btn-refresh-gallery" class="btn">تحديث</button>
+      <button id="btn-toggle-gallery" class="btn">عرض شبكي</button>
+      <span id="snapshot-url-gallery" style="font-size:0.8rem;color:#888;margin-left:1rem;word-break:break-all;display:none"></span>
+    </section>
+    <div id="view-gallery-pagination-top" style="margin-bottom:0.5rem"></div>
+    <div id="view-gallery-grid-pagination-top" style="margin-bottom:0.5rem;display:none"></div>
+    <section class="table-wrap" id="view-gallery-table">
+      <table id="gallery-table">
+        <thead><tr><th>الصورة</th><th>الرابط</th><th>تاريخ الإضافة</th><th class="actions">إجراءات</th></tr></thead>
+        <tbody id="gallery-body"></tbody>
+      </table>
+      <p id="gallery-empty" class="empty">لا توجد صور في المعرض بعد.</p>
+      <div id="view-gallery-pagination"></div>
+    </section>
+    <section id="view-gallery-grid" class="grid-view hidden">
+      <div id="view-gallery-grid-pagination" style="margin-top:0.5rem"></div>
+    </section>
+  </section>
+
+  <section id="tab-news" class="hidden">
+    <section class="toolbar">
+      <button id="btn-news-add" class="btn primary">+ مقال جديد</button>
+      <button id="btn-refresh-news" class="btn">تحديث</button>
+      <button id="btn-toggle-news" class="btn">عرض شبكي</button>
+      <span id="snapshot-url-news" style="font-size:0.8rem;color:#888;margin-left:1rem;word-break:break-all;display:none"></span>
+    </section>
+    <div id="view-news-pagination-top" style="margin-bottom:0.5rem"></div>
+    <div id="view-news-grid-pagination-top" style="margin-bottom:0.5rem;display:none"></div>
+    <section class="table-wrap" id="view-news-table">
+      <table id="news-table">
+        <thead><tr><th>العنوان</th><th>المحتوى</th><th>الصورة</th><th>التاريخ</th><th class="actions">إجراءات</th></tr></thead>
+        <tbody id="news-body"></tbody>
+      </table>
+      <p id="news-empty" class="empty">لا توجد مقالات بعد.</p>
+      <div id="view-news-pagination"></div>
+    </section>
+    <section id="view-news-grid" class="grid-view hidden">
+      <div id="view-news-grid-pagination" style="margin-top:0.5rem"></div>
+    </section>
+  </section>
+
+  <section id="tab-about" class="hidden">
+    <section class="toolbar">
+      <span id="snapshot-url-about" style="font-size:0.8rem;color:#888;word-break:break-all;display:none"></span>
+    </section>
+    <form id="about-form">
+      <div class="form-row"><label>رابط الشعار</label><input type="text" id="about-logo" placeholder="رابط صورة الشعار"><button type="button" id="btn-about-logo" class="btn small" style="white-space:nowrap">تصفح</button></div>
+      <div class="form-row"><label>العنوان</label><input type="text" id="about-title" placeholder="عنوان المتجر"></div>
+      <div class="form-row"><label>الوصف</label><input type="text" id="about-subtitle" placeholder="شعار"></div>
+      <div class="form-row"><label>الوصف</label><textarea id="about-description" rows="4" placeholder="عن المتجر..."></textarea></div>
+      <div class="form-row"><label>العنوان</label><input type="text" id="about-address" placeholder="عنوان المتجر"></div>
+      <div class="form-row"><label>أرقام الهاتف</label><input type="text" id="about-phones" placeholder="مفصول بفواصل: +123, +456"></div>
+      <div class="form-row"><label>رابط إنستغرام</label><input type="text" id="about-instagram" placeholder="https://instagram.com/..."></div>
+      <div class="form-row"><label>رابط فيسبوك</label><input type="text" id="about-facebook" placeholder="https://facebook.com/..."></div>
+      <div class="form-row"><label>رابط واتساب</label><input type="text" id="about-whatsapp" placeholder="https://wa.me/..."></div>
+      <div class="form-actions">
+        <button type="submit" id="btn-about-save" class="btn primary">حفظ</button>
+      </div>
+    </form>
+  </section>
+
+  <section id="tab-settings" class="hidden">
+    <section class="toolbar">
+      <span id="snapshot-url-settings" style="font-size:0.8rem;color:#888;display:none"></span>
+    </section>
+    <div id="settings-content">
+      <p class="empty">جارٍ تحميل الإعدادات...</p>
+    </div>
+  </section>
+</main>
+
+<div id="lightbox" class="hidden" style="position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);cursor:pointer">
+  <img id="lightbox-image" style="max-width:90vw;max-height:90vh;border-radius:4px;cursor:default">
+</div>
+
+<div id="news-modal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-body">
+    <h2 id="news-modal-title">مقال جديد</h2>
+    <form id="news-form">
+      <div class="form-row"><label>العنوان</label><input type="text" id="nf-title" placeholder="عنوان المقال"></div>
+      <div class="form-row"><label>رابط الصورة</label><input type="text" id="nf-image" placeholder="رابط الصورة"><button type="button" id="btn-nf-image" class="btn small" style="white-space:nowrap">تصفح</button></div>
+      <div class="form-row"><label>المحتوى</label><textarea id="nf-content" rows="8" placeholder="محتوى المقال..."></textarea></div>
+      <div class="form-actions">
+        <button type="button" id="btn-news-cancel" class="btn">إلغاء</button>
+        <button type="submit" id="btn-news-save" class="btn primary">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="login-modal" class="modal">
+  <div class="modal-backdrop blur"></div>
+  <div class="modal-body">
+    <h2>تسجيل دخول المشرف</h2>
+    <form id="login-form">
+      <p style="margin-bottom:1rem;position:relative">
+        <input type="password" id="login-password" placeholder="أدخل كلمة المرور" style="width:100%;padding:0.5rem;border:1px solid #ccc;border-radius:4px;font-size:0.9rem;padding-right:2.5rem">
+        <button type="button" id="btn-toggle-password" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:0.85rem;color:#888;padding:4px 6px">إظهار</button>
+      </p>
+      <p id="login-error" style="color:#e74c3c;margin-bottom:0.5rem;display:none"></p>
+      <div class="form-actions">
+        <button type="submit" id="btn-login" class="btn primary" style="width:100%">تسجيل الدخول</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-body">
+    <h2 id="modal-title">عنصر جديد</h2>
+    <form id="item-form">
+      <div id="product-form-fields">
+        <div class="form-row"><label>معرف المنتج</label><input type="number" id="pf-product_id" placeholder="تلقائي" min="0"></div>
+        <div class="form-row"><label>الاسم</label><input type="text" id="pf-name" placeholder="اسم المنتج"></div>
+        <div class="form-row"><label>معلومات مختصرة</label><textarea id="pf-shortInfo" rows="2" placeholder="وصف مختصر"></textarea></div>
+        <div class="form-row"><label>وصف طويل</label><textarea id="pf-longInfo" rows="4" placeholder="وصف طويل"></textarea></div>
+        <div class="form-row"><label>السعر ($)</label><input type="number" id="pf-price" placeholder="0.00" step="0.01"></div>
+        <div class="form-row"><label>الخصم %</label><input type="number" id="pf-discount" placeholder="0" step="1" min="0" max="100"><span id="pf-discount-label" style="font-size:0.8rem;color:#888;margin-left:0.5rem">(0% = السعر الكامل، 100% = مجاني)</span></div>
+        <div class="form-row"><label>الفئة</label><input type="text" id="pf-category" placeholder="مثال: إلكترونيات"></div>
+        <div class="form-row"><label>الوسوم</label><input type="text" id="pf-tags" placeholder="مفصول بفواصل، مثال: جديد، رائج"></div>
+        <div class="form-row"><label>رابط الصورة الرئيسية</label><input type="text" id="pf-mainImage" placeholder="رابط الصورة"><button type="button" id="btn-pf-mainImage" class="btn small" style="white-space:nowrap">تصفح</button></div>
+        <div class="form-row"><label>تفعيل الكمية</label><input type="checkbox" id="pf-quantity" style="width:auto;margin-left:0.5rem"></div>
+        <div class="form-row" id="pf-stock-row" style="display:none"><label>عدد المخزون</label><input type="number" id="pf-stock" placeholder="0" min="0"></div>
+        <div class="form-row"><label>العملة</label><input type="text" id="pf-currency" placeholder="$" style="max-width:60px"></div>
+      </div>
+      <div class="properties-section">
+        <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.25rem">الخصائص</div>
+        <div id="properties-container"></div>
+        <button type="button" id="btn-add-property" class="btn small">+ إضافة خاصية</button>
+      </div>
+      <div class="type-groups-section" style="margin-top:0.75rem">
+        <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.25rem">مجموعات الأنواع</div>
+        <div id="type-groups-container"></div>
+        <button type="button" id="btn-add-type-group" class="btn small">+ إضافة مجموعة</button>
+      </div>
+      <div id="modal-gallery-section" class="gallery-section hidden">
+        <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.25rem">المعرض (صور الشرائح)</div>
+        <div id="gallery-thumbs"></div>
+        <button type="button" id="btn-modal-gallery-add" class="btn small" style="margin-top:0.25rem">+ إضافة صورة</button>
+        <input type="file" id="gallery-file-input" accept="image/*" style="display:none">
+      </div>
+      <div class="form-actions">
+        <button type="button" id="btn-cancel" class="btn">إلغاء</button>
+        <button type="submit" id="btn-save" class="btn primary">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="picker-modal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-body" style="max-width:600px">
+    <h2>اختر صورة</h2>
+    <div id="picker-grid" class="picker-grid"></div>
+    <p id="picker-empty" class="empty">لا توجد صور غير مرتبطة متاحة.</p>
+    <div style="display:flex;gap:0.5rem;margin-top:0.75rem">
+      <button id="btn-picker-upload" class="btn">رفع جديد</button>
+      <button id="btn-picker-cancel" class="btn">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div id="item-view-modal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-body">
+    <h2>تفاصيل العنصر</h2>
+    <div id="item-view-content"></div>
+    <div class="form-actions">
+      <button id="btn-item-view-close" class="btn primary">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<div id="order-modal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-body" style="max-width:600px">
+    <h2>تفاصيل الطلب</h2>
+    <div id="order-modal-content"></div>
+    <div class="form-actions">
+      <button id="btn-order-modal-close" class="btn primary">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<div id="change-password-modal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-body" style="max-width:420px">
+    <h2 id="cp-title">تغيير كلمة المرور</h2>
+    <form id="cp-form">
+      <div class="form-row" id="cp-current-row">
+        <label>كلمة المرور الحالية</label>
+        <input type="password" id="cp-current" placeholder="أدخل كلمة المرور الحالية">
+      </div>
+      <div class="form-row">
+        <label>كلمة المرور الجديدة</label>
+        <input type="password" id="cp-new" placeholder="8 أحرف على الأقل، كبير، صغير، رقم، رمز">
+      </div>
+      <div id="cp-strength" class="cp-strength"></div>
+      <div class="form-row">
+        <label>التأكيد</label>
+        <input type="password" id="cp-confirm" placeholder="أعد إدخال كلمة المرور الجديدة">
+      </div>
+      <p id="cp-error" style="color:#e74c3c;margin-bottom:0.5rem;display:none;font-size:0.85rem"></p>
+      <div class="form-actions">
+        <button type="button" id="cp-cancel" class="btn">إلغاء</button>
+        <button type="submit" id="cp-save" class="btn primary">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
