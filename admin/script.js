@@ -290,7 +290,7 @@ function renderDataView() {
     if (items.length === 0) { grid.innerHTML = ''; empty.style.display = ''; setBoth(['view-data-grid-pagination','view-data-grid-pagination-top'], ''); return; }
     empty.style.display = 'none';
     grid.innerHTML = items.map(item =>
-      `<div class="card" data-action="edit" data-id="${item.id}">${keys.map(k => `<div class="card-key">${labelKey(k)}</div><div class="card-val">${renderCell(item[k])}</div>`).join('')}<div class="card-actions"><button class="btn small" data-action="edit" data-id="${item.id}">تعديل</button><button class="btn small" data-action="duplicate" data-id="${item.id}">نسخ</button> <button class="btn small danger" data-action="delete" data-id="${item.id}">حذف</button></div></div>`
+      `<div class="card" data-action="edit" data-id="${item.id}">${keys.map(k => `<div class="card-key">${labelKey(k)}</div><div class="card-val">${k === 'price' ? renderPrice(item) : renderCell(item[k])}</div>`).join('')}<div class="card-actions"><button class="btn small" data-action="edit" data-id="${item.id}">تعديل</button><button class="btn small" data-action="duplicate" data-id="${item.id}">نسخ</button> <button class="btn small danger" data-action="delete" data-id="${item.id}">حذف</button></div></div>`
     ).join('');
     setBoth(['view-data-grid-pagination','view-data-grid-pagination-top'], pgnHtml);
     setBoth(['view-data-pagination','view-data-pagination-top'], '');
@@ -310,7 +310,7 @@ function renderDataView() {
   empty.style.display = 'none';
   tbody.innerHTML = items.map(item => `
     <tr data-action="edit" data-id="${item.id}">
-      ${keys.map(k => `<td>${renderCell(item[k])}</td>`).join('')}
+      ${keys.map(k => `<td${k === 'price' ? ' style="white-space:nowrap"' : ''}>${k === 'price' ? renderPrice(item) : renderCell(item[k])}</td>`).join('')}
       <td class="actions">
         <button class="btn small" data-action="edit" data-id="${item.id}">تعديل</button>
         <button class="btn small" data-action="duplicate" data-id="${item.id}">نسخ</button>
@@ -911,6 +911,15 @@ function renderCell(val) {
   return esc(s);
 }
 
+function renderPrice(item) {
+  const price = parseFloat(item.price) || 0;
+  if (item.discount > 0) {
+    const discounted = price * (1 - item.discount / 100);
+    return `<s style="color:#e74c3c;font-size:0.85rem">$${price.toFixed(2)}</s> <strong style="color:#2ecc71">$${discounted.toFixed(2)}</strong> <span style="background:#2ecc71;color:#fff;font-size:0.7rem;padding:0.1rem 0.3rem;border-radius:3px">-${item.discount}%</span>`;
+  }
+  return '$' + price.toFixed(2);
+}
+
 /* --- Storage Picker --- */
 
 function openPicker() {
@@ -1272,12 +1281,17 @@ function renderAnalytics(data) {
     </div>`;
   }).join('');
 
-  let topHtml = data.topProducts.map(([id, p]) =>
-    `<div style="display:flex;justify-content:space-between;font-size:0.85rem;padding:0.2rem 0;border-bottom:1px solid #eee">
-      <span>${escHtml((cachedItems.find(i => i.id === id)?.name || p.name).substring(0, 40))}</span>
-      <span>${p.qty} مباع - $${p.revenue.toFixed(2)}</span>
-    </div>`
-  ).join('');
+  let topHtml = data.topProducts.map(([id, p]) => {
+    const item = cachedItems.find(i => i.id === id) || { price: p.revenue / (p.qty || 1), discount: 0 };
+    const unitPrice = parseFloat(item.price) || 0;
+    const unitPriceStr = item.discount > 0
+      ? `<s style="color:#e74c3c">$${unitPrice.toFixed(2)}</s> <strong style="color:#2ecc71">$${(unitPrice * (1 - item.discount / 100)).toFixed(2)}</strong>`
+      : `$${unitPrice.toFixed(2)}`;
+    return `<div style="display:flex;justify-content:space-between;font-size:0.85rem;padding:0.2rem 0;border-bottom:1px solid #eee">
+      <span>${escHtml((item.name || p.name).substring(0, 40))}</span>
+      <span>${unitPriceStr} - ${p.qty} مباع - $${p.revenue.toFixed(2)}</span>
+    </div>`;
+  }).join('');
 
   const total = data.totalOrders || 1;
   const statusLabels = { pending: 'قيد الانتظار', processing: 'قيد المعالجة', shipped: 'تم الشحن', delivered: 'تم التوصيل', cancelled: 'ملغي' };
