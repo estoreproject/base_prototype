@@ -482,7 +482,10 @@ function renderOrdersView() {
       return itemData.items.reduce((sum, item) => sum + (parseFloat(item.price) || 0) * (item.quantity || 1), 0);
     }
     if (itemData.cartTotal != null) return parseFloat(itemData.cartTotal) || 0;
-    const price = parseFloat(fd(o).price) || 0;
+    if (itemData.total != null) return parseFloat(itemData.total) || 0;
+    const fdData = fd(o);
+    if (fdData.total != null) return parseFloat(fdData.total) || 0;
+    const price = parseFloat(fdData.price) || 0;
     const qty = itemData.quantity || 1;
     return price * qty;
   }
@@ -500,10 +503,11 @@ function renderOrdersView() {
       }).join('');
     }
     const qty = itemData.quantity || 1;
+    const price = parseFloat(fd(o).price || itemData.price) || 0;
     const types = itemData.typeSelections && Object.keys(itemData.typeSelections).length
       ? ' (' + Object.entries(itemData.typeSelections).map(([k, v]) => k + ': ' + v).join(', ') + ')'
       : '';
-    return `<a href="#" class="item-link" data-item-id="${escHtml(o.item_id)}">${escHtml(o.item_id.substring(0, 8))}</a>${types} x${qty}`;
+    return `<a href="#" class="item-link" data-item-id="${escHtml(o.item_id)}">${escHtml(o.item_id.substring(0, 8))}</a>${types} x${qty} $${(price * qty).toFixed(2)}`;
   }
 
   if (gridViewOrders) {
@@ -1142,7 +1146,7 @@ function renderOrderModal(order) {
     itemsHtml = `<div><a href="#" class="item-link" data-item-id="${escHtml(itemId)}">${itemDisplay}</a> x${qty} - $${total.toFixed(2)}</div>`;
   }
 
-  let total = d.cartTotal || d.items?.reduce((s, i) => s + (parseFloat(i.price) || 0) * (i.quantity || 1), 0) || 0;
+  let total = d.cartTotal || d.total || d.items?.reduce((s, i) => s + (parseFloat(i.price) || 0) * (i.quantity || 1), 0) || fd.total || 0;
 
   document.getElementById('order-modal-content').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem">
@@ -1216,6 +1220,7 @@ function renderDashboard() {
     const itemData = o.item_data || {};
     if (itemData.cartTotal != null) return sum + parseFloat(itemData.cartTotal) || 0;
     if (itemData.items && Array.isArray(itemData.items)) return sum + itemData.items.reduce((s, i) => s + (parseFloat(i.price) || 0) * (i.quantity || 1), 0);
+    if (itemData.total != null) return sum + parseFloat(itemData.total) || 0;
     return sum;
   }, 0);
 
@@ -1235,7 +1240,7 @@ function renderDashboard() {
   recent.innerHTML = recentOrders.map(o => {
     const d = o.item_data || {};
     const fd = d.formData || d;
-    const total = d.cartTotal != null ? parseFloat(d.cartTotal) || 0 : 0;
+    const total = d.cartTotal != null ? parseFloat(d.cartTotal) || 0 : (d.total != null ? parseFloat(d.total) || 0 : 0);
     return `<div class="recent-order"><span class="ro-customer">${escHtml(fd.name || o.client_name || 'غير معروف')}</span><span class="ro-total">$${total.toFixed(2)}</span><span class="ro-date">${o.created_at ? new Date(o.created_at).toLocaleDateString() : ''}</span></div>`;
   }).join('');
 }
