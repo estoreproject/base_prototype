@@ -173,7 +173,7 @@ router.get('/analytics', async (req, res) => {
     if (!o.created_at) return;
     const day = new Date(o.created_at).toISOString().slice(0, 10);
     const d = o.item_data || {};
-    let total = d.cartTotal || 0;
+    let total = d.cartTotal || d.total || 0;
     if (d.items && Array.isArray(d.items)) {
       total = d.items.reduce((s, i) => s + (parseFloat(i.price) || 0) * (i.quantity || 1), 0);
     }
@@ -193,7 +193,7 @@ router.get('/analytics', async (req, res) => {
       });
     } else if (o.item_id) {
       const qty = d.quantity || 1;
-      const price = parseFloat(d.formData?.price) || 0;
+      const price = parseFloat(d.price || d.formData?.price) || 0;
       if (!productSales[o.item_id]) productSales[o.item_id] = { name: o.item_id, qty: 0, revenue: 0 };
       productSales[o.item_id].qty += qty;
       productSales[o.item_id].revenue += price * qty;
