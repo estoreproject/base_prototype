@@ -1224,8 +1224,9 @@ async function loadDashboard() {
 
 function renderDashboard() {
   const totalProducts = totalDataItems;
-  const totalOrders = cachedOrders.length;
-  const totalRevenue = cachedOrders.reduce((sum, o) => {
+  const activeOrders = cachedOrders.filter(o => o.status !== 'cancelled');
+  const totalOrders = activeOrders.length;
+  const totalRevenue = activeOrders.reduce((sum, o) => {
     const itemData = o.item_data || {};
     if (itemData.cartTotal != null) return sum + parseFloat(itemData.cartTotal) || 0;
     if (itemData.items && Array.isArray(itemData.items)) return sum + itemData.items.reduce((s, i) => s + (parseFloat(i.price) || 0) * (i.quantity || 1), 0);
@@ -1241,7 +1242,7 @@ function renderDashboard() {
   `;
 
   const recent = document.getElementById('dashboard-recent-list');
-  const recentOrders = [...cachedOrders].slice(0, 10);
+  const recentOrders = activeOrders.slice(0, 10);
   if (recentOrders.length === 0) {
     recent.innerHTML = '<p class="empty">لا توجد طلبات بعد.</p>';
     return;

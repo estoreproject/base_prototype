@@ -168,8 +168,10 @@ router.get('/analytics', async (req, res) => {
   const orders = await store.getAllOrders();
   const items = await store.getAll();
 
+  const activeOrders = orders.filter(o => o.status !== 'cancelled');
+
   const dailyRevenue = {};
-  orders.forEach(o => {
+  activeOrders.forEach(o => {
     if (!o.created_at) return;
     const day = new Date(o.created_at).toISOString().slice(0, 10);
     const d = o.item_data || {};
@@ -182,7 +184,7 @@ router.get('/analytics', async (req, res) => {
   });
 
   const productSales = {};
-  orders.forEach(o => {
+  activeOrders.forEach(o => {
     const d = o.item_data || {};
     if (d.items && Array.isArray(d.items)) {
       d.items.forEach(item => {
@@ -207,7 +209,7 @@ router.get('/analytics', async (req, res) => {
     dailyRevenue,
     topProducts: Object.entries(productSales).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 10),
     statusCounts,
-    totalOrders: orders.length,
+    totalOrders: activeOrders.length,
     totalRevenue: Object.values(dailyRevenue).reduce((s, v) => s + v, 0)
   });
 });
